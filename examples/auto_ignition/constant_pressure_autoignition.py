@@ -37,16 +37,16 @@ class ReactorOde(object):
         # print('cantera',np.shape(y))
         # State vector is [T, Y_1, Y_2, ... Y_K]
         self.counter+=1
-        y=np.clip(y,0,np.max(y))
+       # y=np.clip(y,0,np.max(y))
         # y1=np.zeros_like(y)
         # y=np.where(y<0,y1,y)
         # print("cantera negtive happens",np.where(y<0))
 
-        # self.gas.set_unnormalized_mass_fractions(y[1:])
-        # self.gas.TP=y[0], self.P
-        self.gas.TPY = y[0], self.P,y[1:]
-        if (self.gas.concentrations<0).any():
-            print("cantera concentration happens",np.where(self.gas.Y<0))
+        self.gas.set_unnormalized_mass_fractions(y[1:])
+        self.gas.TP=y[0], self.P
+        #self.gas.TPY = y[0], self.P,y[1:]
+        #if (self.gas.concentrations<0).any():
+         #   print("cantera concentration happens",np.where(self.gas.Y<0))
         rho = self.gas.density
 
         wdot = self.gas.net_production_rates
@@ -71,7 +71,7 @@ class ReactorOdeRT(object):
         # print('reactorch',np.shape(y))
         # print("reactorch negtive happens",np.where(y<0))
         self.counter+=1
-        TPY = torch.Tensor(y).T.clamp(min=0, max=None).to(device)
+        TPY = torch.Tensor(y).T.to(device)
         # if (TPY<0).any():
         #    print("reactorch negtive happens",torch.where(TPY<0))
         # print(TPY.size())
@@ -134,9 +134,9 @@ class ReactorOdeRT(object):
 ################################modified input
 t0_start = perf_counter()
 
-# mech_yaml = '../../data/IC8H18_reduced.yaml'
+mech_yaml = '../../data/IC8H18_reduced.yaml'
 # mech_yaml = '../../data/nc7_ver3.1_mech_chem.yaml'
-mech_yaml = '../../data/gri30.yaml'
+#mech_yaml = '../../data/gri30.yaml'
 
 sol = rt.Solution(mech_yaml=mech_yaml, device=device,vectorize=True)
 
@@ -147,9 +147,9 @@ gas = ct.Solution(mech_yaml)
 # Initial condition
 P = ct.one_atm * 1
 T = 1800
-# composition = 'IC8H18:0.5,O2:12.5,N2:34.0'
+composition = 'IC8H18:0.5,O2:12.5,N2:34.0'
 #composition = 'IC8H18:0.08,O2:1.0,N2:3.76'
-composition = 'CH4:0.5,O2:11,N2:40'
+#composition = 'CH4:0.5,O2:11,N2:40'
 # composition='NC7H16:0.5,O2:11.0,N2:40.0'
 # composition='NC7H16:0.4,O2:11.0,N2:41.36'
 gas.TPX = T, P, composition
@@ -368,17 +368,20 @@ try:
 except ImportError:
     print('Matplotlib not found. Unable to plot results.')
 len_n=np.shape(states.t)
+njevp=njev[0:len_n,:]
+nfevp=nfev[0:len_n,:]
+nlup=nlu[0:len_n,:]
 plt.subplot(311)
-plt.plot(states.t,njev[0:len_n,0],ls='-.',label='njev_ct')
-plt.plot(states.t,njev[0:len_n,1],ls='-',label='njev_rt')
+plt.plot(states.t,njevp[:,0],ls='-.',label='njev_ct')
+plt.plot(states.t,njevp[:,1],ls='-',label='njev_rt')
 plt.legend()
 plt.subplot(312)
-plt.plot(states.t,nfev[0:len_n,0],ls='-.',label='nfev_ct')
-plt.plot(states.t,nfev[0:len_n,1],ls='-',label='nfev_rt')
+plt.plot(states.t,nfevp[:,0],ls='-.',label='nfev_ct')
+plt.plot(states.t,nfevp[:,1],ls='-',label='nfev_rt')
 plt.legend()
 plt.subplot(313)
-plt.plot(states.t,nlu[0:len_n,0],ls='-.',label='nlu_ct')
-plt.plot(states.t,nlu[0:len_n,1],ls='-',label='nlu_rt')
+plt.plot(states.t,nlup[:,0],ls='-.',label='nlu_ct')
+plt.plot(states.t,nlup[:,1],ls='-',label='nlu_rt')
 plt.legend()
 plt.savefig('njev.png', dpi=300)
 plt.show()
