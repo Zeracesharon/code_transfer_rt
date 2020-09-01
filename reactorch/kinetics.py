@@ -215,7 +215,7 @@ def reverse_rate_constants_func(self):
 
 def wdot_func(self):
     # eps = 1e-300
-    nt=self.forward_rate_constants.size()[0].to(self.device)
+    nt=self.forward_rate_constants.size()[0]
     temp_forward=torch.ones(nt,self.n_reactions).to(self.device)
     temp_reverse=torch.ones(nt,self.n_reactions).to(self.device)    
     for i in range(self.n_reactions):
