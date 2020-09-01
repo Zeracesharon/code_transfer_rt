@@ -20,7 +20,7 @@ import torch
 from torch.autograd.functional import jacobian as jacobian
 from time import perf_counter
 
-device=torch.device('cuda:0')]
+device=torch.device('cuda:0')
 torch.set_default_tensor_type('torch.DoubleTensor')
 class ReactorOde(object):
     def __init__(self, gas):
