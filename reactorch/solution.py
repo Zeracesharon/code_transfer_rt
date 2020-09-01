@@ -167,6 +167,6 @@ class Solution(nn.Module): #将nn.module作为一个基类
         self.reverse_rate_constants_func()
 
         self.wdot_func()
-        #self.TYdot_func()# set this on when TYdot checking is required for solution_test
+        self.TYdot_func()# set this on when TYdot checking is required for solution_test
     
         
