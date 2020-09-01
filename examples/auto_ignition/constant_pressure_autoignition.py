@@ -182,7 +182,7 @@ ode = ReactorOde(gas)
 ##################################################################
 
 # Integrate the equations using Cantera
-t_end = 1e-10
+t_end = 1e-3
 states = ct.SolutionArray(gas, 1, extra={'t': [0.0]})
 dt = 1e-5
 t = 0
@@ -367,17 +367,18 @@ try:
     plt.show()
 except ImportError:
     print('Matplotlib not found. Unable to plot results.')
-# plt.subplot(311)
-# plt.plot(states.t,njev[:,0],ls='-.',label='njev_ct')
-# plt.plot(states.t,njev[:,1],ls='-',label='njev_rt')
-# plt.legend()
-# plt.subplot(312)
-# plt.plot(states.t,nfev[:,0],ls='-.',label='nfev_ct')
-# plt.plot(states.t,nfev[:,1],ls='-',label='nfev_rt')
-# plt.legend()
-# plt.subplot(313)
-# plt.plot(states.t,nlu[:,0],ls='-.',label='nlu_ct')
-# plt.plot(states.t,nlu[:,1],ls='-',label='nlu_rt')
-# plt.legend()
-# plt.savefig('njev.png', dpi=300)
-# plt.show()
+len_n=np.shape(states.t)
+plt.subplot(311)
+plt.plot(states.t,njev[0:len_n,0],ls='-.',label='njev_ct')
+plt.plot(states.t,njev[0:len_n,1],ls='-',label='njev_rt')
+plt.legend()
+plt.subplot(312)
+plt.plot(states.t,nfev[0:len_n,0],ls='-.',label='nfev_ct')
+plt.plot(states.t,nfev[0:len_n,1],ls='-',label='nfev_rt')
+plt.legend()
+plt.subplot(313)
+plt.plot(states.t,nlu[0:len_n,0],ls='-.',label='nlu_ct')
+plt.plot(states.t,nlu[0:len_n,1],ls='-',label='nlu_rt')
+plt.legend()
+plt.savefig('njev.png', dpi=300)
+plt.show()
