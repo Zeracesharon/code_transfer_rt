@@ -20,7 +20,8 @@ import torch
 from torch.autograd.functional import jacobian as jacobian
 from time import perf_counter
 
-
+device=torch.device('cuda:0')]
+torch.set_default_tensor_type('torch.DoubleTensor')
 class ReactorOde(object):
     def __init__(self, gas):
         # Parameters of the ODE system and auxiliary data are stored in the
@@ -70,7 +71,7 @@ class ReactorOdeRT(object):
         # print('reactorch',np.shape(y))
         # print("reactorch negtive happens",np.where(y<0))
         self.counter+=1
-        TPY = torch.Tensor(y).T.clamp(min=0, max=None)
+        TPY = torch.Tensor(y).T.clamp(min=0, max=None).to(device)
         # if (TPY<0).any():
         #    print("reactorch negtive happens",torch.where(TPY<0))
         # print(TPY.size())
@@ -83,7 +84,7 @@ class ReactorOdeRT(object):
             # TYdot=torch.where(abs(TYdot)>1e-290,TYdot,TYdot_zero)
 
         # return TYdot.T.detach().cpu().numpy()
-        return TYdot.T.numpy()
+        return TYdot.T.cpu().numpy()
 
 
 
@@ -133,10 +134,11 @@ class ReactorOdeRT(object):
 ################################modified input
 t0_start = perf_counter()
 
-mech_yaml = '../../data/IC8H18_reduced.yaml'
+# mech_yaml = '../../data/IC8H18_reduced.yaml'
 # mech_yaml = '../../data/nc7_ver3.1_mech_chem.yaml'
-# mech_yaml = '../../data/gri30.yaml'
-sol = rt.Solution(mech_yaml=mech_yaml, device=None,vectorize=True)
+mech_yaml = '../../data/gri30.yaml'
+
+sol = rt.Solution(mech_yaml=mech_yaml, device=device,vectorize=True)
 
 gas = ct.Solution(mech_yaml)
 
@@ -145,9 +147,9 @@ gas = ct.Solution(mech_yaml)
 # Initial condition
 P = ct.one_atm * 1
 T = 1800
-composition = 'IC8H18:0.5,O2:12.5,N2:34.0'
+# composition = 'IC8H18:0.5,O2:12.5,N2:34.0'
 #composition = 'IC8H18:0.08,O2:1.0,N2:3.76'
-# composition = 'CH4:0.5,O2:11,N2:40'
+composition = 'CH4:0.5,O2:11,N2:40'
 # composition='NC7H16:0.5,O2:11.0,N2:40.0'
 # composition='NC7H16:0.4,O2:11.0,N2:41.36'
 gas.TPX = T, P, composition
@@ -163,24 +165,24 @@ y0 = np.hstack((gas.T, gas.Y))
 # Set up objects representing the ODE and the solver
 ode = ReactorOde(gas)
 
-Ydot_cantera=[]
-Tdot_cantera=[]
-TYdot_reactorch=[]
+# Ydot_cantera=[]
+# Tdot_cantera=[]
+# TYdot_reactorch=[]
 ######################################################
-ode.gas.TPY = y0[0], ode.P,y0[1:]
-rho = ode.gas.density
+# ode.gas.TPY = y0[0], ode.P,y0[1:]
+# rho = ode.gas.density
 
-wdot = ode.gas.net_production_rates
-dTdt = - (np.dot(ode.gas.partial_molar_enthalpies, wdot) /
-                  (rho * ode.gas.cp))
-dYdt = wdot * ode.gas.molecular_weights / rho
-Ydot_cantera.append([dYdt.T])
-Tdot_cantera.append([dTdt.T])
+# wdot = ode.gas.net_production_rates
+# dTdt = - (np.dot(ode.gas.partial_molar_enthalpies, wdot) /
+#                   (rho * ode.gas.cp))
+# dYdt = wdot * ode.gas.molecular_weights / rho
+# Ydot_cantera.append([dYdt.T])
+# Tdot_cantera.append([dTdt.T])
 # print('cantera',dTdt,dYdt)
 ##################################################################
 
 # Integrate the equations using Cantera
-t_end = 1e-3
+t_end = 1e-10
 states = ct.SolutionArray(gas, 1, extra={'t': [0.0]})
 dt = 1e-5
 t = 0
@@ -198,19 +200,19 @@ nfev=np.zeros((int(t_end/dt)+1,2),dtype=int)
 nlu=np.zeros((int(t_end/dt)+1,2),dtype=int)
 
 ###################################################################
-T=torch.tensor([[y0[0]]])
+# T=torch.tensor([[y0[0]]])
        
-Y=torch.tensor([y0[1:]])
+# Y=torch.tensor([y0[1:]])
         
-TPY = torch.cat((T, Y), dim=1)
+# TPY = torch.cat((T, Y), dim=1)
 
-with torch.no_grad():
+# with torch.no_grad():
 
-    ode_rt.sol.set_states(TPY)
+#     ode_rt.sol.set_states(TPY)
 
-    TYdot = ode_rt.sol.TYdot_func()
-TYdot=TYdot.T.numpy()
-TYdot_reactorch.append([TYdot])
+#     TYdot = ode_rt.sol.TYdot_func()
+# TYdot=TYdot.T.numpy()
+# TYdot_reactorch.append([TYdot])
 # # print('reactorch',TYdot)
 #####################################################
 i,j=0,0
@@ -235,15 +237,15 @@ while ode_success and t < t_end:
     #print('t {} T {}'.format(t, y[0]))
     ###########################################################
    
-    ode.gas.TPY = y[0], ode.P,y[1:]
-    rho = ode.gas.density
+    # ode.gas.TPY = y[0], ode.P,y[1:]
+    # rho = ode.gas.density
 
-    wdot = ode.gas.net_production_rates
-    dTdt = - (np.dot(ode.gas.partial_molar_enthalpies, wdot) /
-                  (rho * ode.gas.cp))
-    dYdt = wdot * ode.gas.molecular_weights / rho
-    Ydot_cantera.append([dYdt.T])
-    Tdot_cantera.append([dTdt.T])
+    # wdot = ode.gas.net_production_rates
+    # dTdt = - (np.dot(ode.gas.partial_molar_enthalpies, wdot) /
+    #               (rho * ode.gas.cp))
+    # dYdt = wdot * ode.gas.molecular_weights / rho
+    # Ydot_cantera.append([dYdt.T])
+    # Tdot_cantera.append([dTdt.T])
     # print('cantera',dTdt,dYdt)
 ##################################################################
     ode_successful = odesol.success
@@ -284,21 +286,21 @@ while ode_success and t < t_end:
     ode_successful = odesol.success
     # print('reactorch',np.shape(y))
     ####################################################################
-    T=torch.tensor([[y[0]]])
+    # T=torch.tensor([[y[0]]])
            
-    Y=torch.tensor([y[1:]])
+    # Y=torch.tensor([y[1:]])
         
-    TPY = torch.cat((T, Y), dim=1)
+    # TPY = torch.cat((T, Y), dim=1)
 
-    with torch.no_grad():
+    # with torch.no_grad():
 
-        ode_rt.sol.set_states(TPY)
+    #     ode_rt.sol.set_states(TPY)
 
-        TYdot = ode_rt.sol.TYdot_func()
+    #     TYdot = ode_rt.sol.TYdot_func()
 
         
-    TYdot=TYdot.T.numpy()
-    TYdot_reactorch.append([TYdot])
+    # TYdot=TYdot.T.numpy()
+    # TYdot_reactorch.append([TYdot])
     # # print('reactorch',TYdot)    
 #####################################################
 
@@ -317,28 +319,28 @@ while ode_success and t < t_end:
 t_stop = perf_counter()
 print('time spent {:.1e} [s]'.format(t_stop - t_stop1))
 ###########################################################
-eps = 1e-300
-delta = 1e-4
-ratiot=np.ones(j)
-for i in range(j):
-    TYdot_rt=np.array(TYdot_reactorch[i])
-    Tdot_ct=np.array(Tdot_cantera[i])
-    Ydot_ct=np.array(Ydot_cantera[i])
-    ratiot[i] = (TYdot_rt[0,0] + eps) / (Tdot_ct[0] + eps) 
+# eps = 1e-300
+# delta = 1e-4
+# ratiot=np.ones(j)
+# for i in range(j):
+#     TYdot_rt=np.array(TYdot_reactorch[i])
+#     Tdot_ct=np.array(Tdot_cantera[i])
+#     Ydot_ct=np.array(Ydot_cantera[i])
+#     ratiot[i] = (TYdot_rt[0,0] + eps) / (Tdot_ct[0] + eps) 
     
 
-    ratio = (TYdot_rt[0,1:] + eps) / (Ydot_ct[:] + eps)
-    if ratio.min() < 1 - delta or ratio.max() > 1 + delta:
-    # pass
-        print("Ydot {:.4e} {:.4e}".format(
-              ratio.min(), ratio.max()))
+#     ratio = (TYdot_rt[0,1:] + eps) / (Ydot_ct[:] + eps)
+#     if ratio.min() < 1 - delta or ratio.max() > 1 + delta:
+#     # pass
+#         print("Ydot {:.4e} {:.4e}".format(
+#               ratio.min(), ratio.max()))
         
-if ratiot.min()< 1 - delta or ratiot.max()> 1 + delta:
-    # pass
-        print("Tdot",ratiot.min(),ratiot.max())
+# if ratiot.min()< 1 - delta or ratiot.max()> 1 + delta:
+#     # pass
+#         print("Tdot",ratiot.min(),ratiot.max())
     
-if np.isfinite(np.array(TYdot_reactorch)).all()==False:
-    print('reactorch TYdot_rt qdot is not finite')
+# if np.isfinite(np.array(TYdot_reactorch)).all()==False:
+#     print('reactorch TYdot_rt qdot is not finite')
 
 #Plot the results
 try:
@@ -365,15 +367,17 @@ try:
     plt.show()
 except ImportError:
     print('Matplotlib not found. Unable to plot results.')
-plt.subplot(311)
-plt.plot(states.t,njev[:,0],ls='-.',label='njev_ct')
-plt.plot(states.t,njev[:,1],ls='-',label='njev_rt')
-plt.legend()
-plt.subplot(312)
-plt.plot(states.t,nfev[:,0],ls='-.',label='nfev_ct')
-plt.plot(states.t,nfev[:,1],ls='-',label='nfev_rt')
-plt.legend()
-plt.subplot(313)
-plt.plot(states.t,nlu[:,0],ls='-.',label='nlu_ct')
-plt.plot(states.t,nlu[:,1],ls='-',label='nlu_rt')
-plt.legend()
+# plt.subplot(311)
+# plt.plot(states.t,njev[:,0],ls='-.',label='njev_ct')
+# plt.plot(states.t,njev[:,1],ls='-',label='njev_rt')
+# plt.legend()
+# plt.subplot(312)
+# plt.plot(states.t,nfev[:,0],ls='-.',label='nfev_ct')
+# plt.plot(states.t,nfev[:,1],ls='-',label='nfev_rt')
+# plt.legend()
+# plt.subplot(313)
+# plt.plot(states.t,nlu[:,0],ls='-.',label='nlu_ct')
+# plt.plot(states.t,nlu[:,1],ls='-',label='nlu_rt')
+# plt.legend()
+# plt.savefig('njev.png', dpi=300)
+# plt.show()
