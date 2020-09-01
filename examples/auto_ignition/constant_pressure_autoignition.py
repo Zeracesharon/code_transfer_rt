@@ -135,7 +135,7 @@ class ReactorOdeRT(object):
 ################################modified input
 t0_start = perf_counter()
 
-mech_yaml = '../../data/IC8H18_reduced.yaml'
+mech_yaml = '../../data/ic8_ver3_mech.yaml'
 # mech_yaml = '../../data/nc7_ver3.1_mech_chem.yaml'
 #mech_yaml = '../../data/gri30.yaml'
 
@@ -229,7 +229,7 @@ while ode_success and t < t_end:
     t = odesol.t[-1]
     y = odesol.y[:, -1]
     # y=np.clip(y,0,np.max(y))
-    # print('t {:.2e} [s]'.format(t),'nfev',odesol.nfev,'njev',odesol.njev,'nlu',odesol.nlu)
+    print('t {:.2e} [s]'.format(t),'nfev',odesol.nfev,'njev',odesol.njev,'nlu',odesol.nlu)
     # print('counter',ode.counter)
     nfev[i,0]=odesol.nfev
     njev[i,0]=odesol.njev
@@ -307,7 +307,7 @@ while ode_success and t < t_end:
 
     #print('t {} T {}'.format(t, y[0]))
     
-    # print('t {:.2e} [s]'.format(t),'nfev',odesol.nfev,'njev',odesol.njev,'nlu',odesol.nlu)
+    print('t {:.2e} [s]'.format(t),'nfev',odesol.nfev,'njev',odesol.njev,'nlu',odesol.nlu)
     # print('counter',ode_rt.counter)
     nfev[j,1]=odesol.nfev
     njev[j,1]=odesol.njev
@@ -369,32 +369,29 @@ try:
 except ImportError:
     print('Matplotlib not found. Unable to plot results.')
     
-len_n=np.shape(states.t)
-njevp=njev[0:len_n,:]
-nfevp=nfev[0:len_n,:]
-nlup=nlu[0:len_n,:]    
-    
+   
+len_n=np.shape(states.t) 
 csv_file = 'njev_nlu_nfev.csv'
 with open(csv_file, 'w') as outfile:
     writer = csv.writer(outfile)
     writer.writerow(['njev_ct','njev_rt','nfev_ct','nfev_rt','nlu_ct','nlu_rt'] )
     for i in range(len_n):
-        writer.writerow([njevp[i,0], njevp[i,1], nfevp[i,0], nfevp[i,1], nlup[i,0], nlup[i,1]])
+        writer.writerow([njev[i,0], njev[i,1], nfev[i,0], nfev[i,1], nlu[i,0], nlu[i,1]])
 print ('output written to '+csv_file)
 
 
 
 plt.subplot(311)
-plt.plot(states.t,njevp[:,0],ls='-.',label='njev_ct')
-plt.plot(states.t,njevp[:,1],ls='-',label='njev_rt')
+plt.plot(states.t,njev[:,0],ls='-.',label='njev_ct')
+plt.plot(states.t,njev[:,1],ls='-',label='njev_rt')
 plt.legend()
 plt.subplot(312)
-plt.plot(states.t,nfevp[:,0],ls='-.',label='nfev_ct')
-plt.plot(states.t,nfevp[:,1],ls='-',label='nfev_rt')
+plt.plot(states.t,nfev[:,0],ls='-.',label='nfev_ct')
+plt.plot(states.t,nfev[:,1],ls='-',label='nfev_rt')
 plt.legend()
 plt.subplot(313)
-plt.plot(states.t,nlup[:,0],ls='-.',label='nlu_ct')
-plt.plot(states.t,nlup[:,1],ls='-',label='nlu_rt')
+plt.plot(states.t,nlu[:,0],ls='-.',label='nlu_ct')
+plt.plot(states.t,nlu[:,1],ls='-',label='nlu_rt')
 plt.legend()
 plt.savefig('njev.png', dpi=300)
 plt.show()
