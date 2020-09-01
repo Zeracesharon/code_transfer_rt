@@ -19,6 +19,7 @@ from scipy.integrate import solve_ivp
 import torch
 from torch.autograd.functional import jacobian as jacobian
 from time import perf_counter
+import csv
 
 device=torch.device('cuda:0')
 torch.set_default_tensor_type('torch.DoubleTensor')
@@ -367,10 +368,22 @@ try:
     plt.show()
 except ImportError:
     print('Matplotlib not found. Unable to plot results.')
+    
 len_n=np.shape(states.t)
 njevp=njev[0:len_n,:]
 nfevp=nfev[0:len_n,:]
-nlup=nlu[0:len_n,:]
+nlup=nlu[0:len_n,:]    
+    
+csv_file = 'njev_nlu_nfev.csv'
+with open(csv_file, 'w') as outfile:
+    writer = csv.writer(outfile)
+    writer.writerow(['njev_ct','njev_rt','nfev_ct','nfev_rt','nlu_ct','nlu_rt'] )
+    for i in range(len_n):
+        writer.writerow([njevp[i,0], njevp[i,1], nfevp[i,0], nfevp[i,1], nlup[i,0], nlup[i,1]])
+print ('output written to '+csv_file)
+
+
+
 plt.subplot(311)
 plt.plot(states.t,njevp[:,0],ls='-.',label='njev_ct')
 plt.plot(states.t,njevp[:,1],ls='-',label='njev_rt')
