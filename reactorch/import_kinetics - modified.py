@@ -1,23 +1,26 @@
 import torch
 
 
-def set_nasa(self):    
-
-    self.species_names=self.gas.species_names
+def set_nasa(self):
+    
+    self.species_name=list()
+    for i in range(self.n_species):
+        self.species_name.append(self.model_yaml['phases'][0]['species'][i])
     
     self.nasa_low = torch.zeros([self.n_species, 7]).to(self.device)    
     self.nasa_high = torch.zeros([self.n_species, 7]).to(self.device)
-    
+    #self.n.species行，7列的tensor
     for i in range(self.n_species):
+        flag=True
         j=0
-        while True:
-            if self.species_names[i]==self.model_yaml['species'][j]['name']:
-                break
+        while flag:
+            if self.species_name[i]==self.model_yaml['species'][j]['name']:
+                flag=False
             else:
                 j=j+1          
         
         self.nasa_low[i, :] = torch.Tensor(self.model_yaml['species'][j]['thermo']['data'][0])
-
+        #读取mech_yaml里species下第i个下的thermo下的data的第一个数据。
         self.nasa_high[i, :] = torch.Tensor(self.model_yaml['species'][j]['thermo']['data'][1])
 
 

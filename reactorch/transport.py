@@ -23,7 +23,7 @@ def viscosities_func(self):
     self.etak_over_etaj = torch.bmm(
         self.species_viscosities.unsqueeze(-1),
         1 / self.species_viscosities.unsqueeze(-1).view(-1, 1, self.n_species))
-
+    #unsqueeze倒数第一个维度上增加一个维度,view(-1,1,n)第一个-1可以由另外两个推断出来，重排tensor
     self.PHI = (1 / 2.8284271247461903 / torch.sqrt(1 + self.Wk_over_Wj) *
                 (1 + self.etak_over_etaj ** 0.5 * self.Wj_over_Wk ** 0.25) ** 2)
 

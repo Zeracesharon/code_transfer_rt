@@ -214,14 +214,102 @@ def reverse_rate_constants_func(self):
 
 
 def wdot_func(self):
-    eps = 1e-300
+    # eps = 1e-300
+    nt=self.forward_rate_constants.size()[0]
+    temp_forward=torch.ones(nt,self.n_reactions)
+    temp_reverse=torch.ones(nt,self.n_reactions)     
+    for i in range(self.n_reactions):
+        multiply_temp_forward=torch.ones(nt)
+        multiply_temp_reverse=torch.ones(nt)
+        list_forward=[]
+        list_reverse=[]
+        for j in range(self.n_species):
+            if self.reactant_orders[j,i]!=0:
+                list_forward.append(j)
+            if self.product_stoich_coeffs[j,i]!=0:
+                list_reverse.append(j)
+            multiply_temp_forward*=self.C[:,j]**self.reactant_orders[j,i]
+            multiply_temp_reverse*=self.C[:,j]**self.product_stoich_coeffs[j,i]
+        temp_forward[:,i]=multiply_temp_forward
+        temp_reverse[:,i]=multiply_temp_reverse
+        len_for=len(list_forward)
+        len_rev=len(list_reverse)
 
-    self.forward_rates_of_progress = self.forward_rate_constants * \
-        torch.exp(torch.mm(torch.log(self.C + eps), self.reactant_orders))
+        for t in range (nt):
+            counter_for=0
+            counter_rev=0
+            flag_negative_forward=0
+            flag_negative_reverse=0
+            for j in list_forward:
+                if self.C[t,j]<0:
+                    counter_for+=1
+            if counter_for>=2 or (len_for==1 and counter_for==1):
+                flag_negative_forward=1
+            for j in list_reverse:
+                if self.C[t,j]<0:
+                    counter_rev+=1
+            if counter_rev>=2 or (len_rev==1 and counter_rev==1):
+                flag_negative_reverse=1
+                
+            if flag_negative_forward==1 and temp_forward[t,i]>0:
+                temp_forward[t,i]=0
+            if flag_negative_reverse==1 and temp_reverse[t,i]>0:
+                temp_reverse[t,i]=0
+    self.forward_rates_of_progress = self.forward_rate_constants * temp_forward
+    self.reverse_rates_of_progress = self.reverse_rate_constants * temp_reverse 
+    
+    # for i in range(self.n_reactions):
+    #     list_forward=[]
+    #     list_reverse=[]
+    #     for j in range(self.n_species):
+    #         if self.reactant_orders[j,i]!=0:
+    #             list_forward.append(j)
+    #         if self.product_stoich_coeffs[j,i]!=0:
+    #             list_reverse.append(j)
+    #     for t in range (nt):
+    #         flag_negative_forward=1
+    #         flag_negative_reverse=1
+    #         for j in list_forward:
+    #             if self.C[t,j]>0:
+    #                 flag_negative_forward=0
+    #         for j in list_reverse:
+    #             if self.C[t,j]>0:
+    #                 flag_negative_reverse=0
+    #         if flag_negative_forward==1 and self.forward_rates_of_progress[t,i]>0:
+    #             self.forward_rates_of_progress[t,i]=0
+    #         if flag_negative_reverse==1 and self.reverse_rates_of_progress[t,i]>0:
+    #             self.reverse_rates_of_progress[t,i]=0
+    
+    # nt=self.forward_rate_constants.size()[0]
+    # temp_forward=torch.ones_like(self.forward_rate_constants)
+    # temp_reverse=torch.ones_like(self.reverse_rate_constants)   
+    # for t in range(nt):
+    #     for i in range(self.n_reactions):
+    #         multiply_temp_forward=1
+    #         multiply_temp_reverse=1
+    #         for j in range(self.n_species):
+         
+    #             multiply_temp_forward*=self.C[t,j]**self.reactant_orders[j,i]
+    #             multiply_temp_reverse*=self.C[t,j]**self.product_stoich_coeffs[j,i]
+    #         temp_forward[t,i]=multiply_temp_forward
+    #         temp_reverse[t,i]=multiply_temp_reverse        
+    # self.forward_rates_of_progress = self.forward_rate_constants * temp_forward
+    # self.reverse_rates_of_progress = self.reverse_rate_constants * temp_reverse     
+    
+    # C_eps=torch.zeros_like(self.C).fill_(eps)
+    # C_temp=torch.where(self.C<0,C_eps,self.C+eps)
+    # self.forward_rates_of_progress = self.forward_rate_constants * \
+    #     torch.exp(torch.mm(torch.log(C_temp), self.reactant_stoich_coeffs))
+    # self.reverse_rates_of_progress = self.reverse_rate_constants * \
+    #     torch.exp(torch.mm(torch.log(C_temp), self.product_stoich_coeffs))              
+    
+    
+    # self.forward_rates_of_progress = self.forward_rate_constants * \
+    #     torch.exp(torch.mm(torch.log(self.C+eps), self.reactant_stoich_coeffs))
 
-    self.reverse_rates_of_progress = self.reverse_rate_constants * \
-        torch.exp(torch.mm(torch.log(self.C + eps), self.product_stoich_coeffs))
-
+    # self.reverse_rates_of_progress = self.reverse_rate_constants * \
+    #     torch.exp(torch.mm(torch.log(self.C+eps), self.product_stoich_coeffs))     
+        
     self.qdot = self.forward_rates_of_progress - self.reverse_rates_of_progress
 
     self.wdot = torch.mm(self.qdot, self.net_stoich_coeffs.T)
@@ -233,6 +321,8 @@ def Ydot_func(self):
 
     self.Ydot = self.wdot / self.density_mass * self.molecular_weights.T
 
+          
+           
 
 def Xdot_func(self):
 

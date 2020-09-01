@@ -14,14 +14,27 @@ cpu = torch.device('cpu')
 cuda = torch.device('cuda:0')
 
 device = cpu
-
-mech_yaml = '../data/gri30.yaml'
-composition = "CH4:0.5, O2:1.0, N2:3.76"
+##############input modified
+mech_yaml = '../data/chem.yaml'
+composition = 'IC8H18:0.4,O2:12.5,N2:40'
 
 sol = rt.Solution(mech_yaml=mech_yaml, device=device)
 
 gas = sol.gas
-gas.TPX = 950, 20 * ct.one_atm, composition
+gas.TPX = 1800, 2 * ct.one_atm, composition
+
+Y=torch.tensor(gas.Y).unsqueeze(0)
+TP=torch.tensor(gas.TP).unsqueeze(0)
+TPY = torch.cat([TP, Y], dim=-1)
+
+t0_start = perf_counter()
+
+sol.set_states(TPY)
+
+t1_stop = perf_counter()
+print('reactorch',TPY.size())
+print('sol set_states time spent {:.1e} [s]'.format(t1_stop - t0_start))
+
 
 r = ct.IdealGasReactor(gas)
 sim = ct.ReactorNet([r])
@@ -39,7 +52,7 @@ while sim.time < t_end:
     sim.step()
 
     states.append(r.thermo.state, t=time)
-
+  
     if r.thermo.T > T0 + 600 and idt < 1e-10:
         idt = sim.time
 
@@ -64,6 +77,7 @@ t0_start = perf_counter()
 sol.set_states(TPY)
 
 t1_stop = perf_counter()
+print('reactorch',TPY.size())
 print('sol set_states time spent {:.1e} [s]'.format(t1_stop - t0_start))
 
 sol.forward_rate_constants_func()

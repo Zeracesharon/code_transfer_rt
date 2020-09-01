@@ -11,6 +11,7 @@ def Y2X(self):
 
 
 def Y2C(self):
+     
     self.C = self.Y * self.density_mass / self.molecular_weights.T
 
 

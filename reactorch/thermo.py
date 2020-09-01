@@ -2,9 +2,9 @@ import torch
 
 
 def cp_mole_func(self):
-
+    #Nasa七系数模型的Cp_T求解
     self.cp_T = torch.cat([self.T ** 0, self.T, self.T ** 2, self.T ** 3, self.T ** 4], dim=1)
-
+    #按列拼接
     self.cp = (torch.mm(self.cp_T, self.nasa_low[:, :5].T) * (self.T <= 1000).int() +
                torch.mm(self.cp_T, self.nasa_high[:, :5].T) * (self.T > 1000).int())
 
