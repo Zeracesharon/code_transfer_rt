@@ -116,7 +116,7 @@ class Solution(nn.Module): #将nn.module作为一个基类
             
 
         if TPY.shape[1] == self.n_species + 1:
-            self.P = torch.ones_like(self.T) * self.P_ref
+            self.P = torch.ones_like(self.T) * self.P_ref.to(self.device)
             #压力=一个与T维度一样的张量*参考压强
             # self.Y= torch.clamp(TPY[:, 1:], min=0, max=None)
             self.Y= TPY[:, 1:]
