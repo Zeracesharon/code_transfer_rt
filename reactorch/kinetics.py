@@ -243,12 +243,12 @@ def wdot_func(self):
             for j in list_forward:
                 if self.C[t,j]<0:
                     counter_for+=1
-            if counter_for>=2 or (len_for==1 and counter_for==1):
+            if counter_for>1 or (len_for==1 and counter_for==1):
                 flag_negative_forward=1
             for j in list_reverse:
                 if self.C[t,j]<0:
                     counter_rev+=1
-            if counter_rev>=2 or (len_rev==1 and counter_rev==1):
+            if counter_rev>1 or (len_rev==1 and counter_rev==1):
                 flag_negative_reverse=1
                 
             if flag_negative_forward==1 and temp_forward[t,i]>0:
